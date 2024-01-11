@@ -1,5 +1,9 @@
 # Overview
-This Ansible code automates the deployment of a frigate server on VM or Bare Metal, with optional OAuth2 & HTTPS support. Includes roles and variables to support optional configurations:
+This Ansible code automates the deployment of a frigate server on VM or Bare Metal, with optional OAuth2 & HTTPS support.
+
+![Login with Google](docs/images/google_login.png)
+
+Includes roles and variables to support optional configurations:
 
 | Configuration | Details                  |
 | ------------- | -------                  |
