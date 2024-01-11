@@ -1,0 +1,138 @@
+---
+- name: Generate CA on server
+  community.crypto.openssl_privatekey:
+    path: /etc/ssl/private/frigate_ca_privatekey.pem
+
+- name: Create certificate signing request (CSR) for CA certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /etc/ssl/private/frigate_ca_privatekey.pem
+    common_name: frigate-root
+    use_common_name_for_san: false
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: ca_csr
+
+- name: Create Self-Signed Certificate from CSR
+  community.crypto.x509_certificate:
+    path: /etc/ssl/certs/frigate_ca_cert.pem
+    csr_content: "{{ ca_csr.csr }}"
+    privatekey_path: /etc/ssl/private/frigate_ca_privatekey.pem
+    provider: selfsigned
+
+- name: Create certs directory
+  ansible.builtin.file:
+    path: '{{ frigate_base_dir }}/certs'
+    mode: '0644'
+    state: 'directory'
+
+- name: Copy CA Cert into certs folder
+  ansible.builtin.copy:
+    remote_src: true
+    src: '/etc/ssl/certs/frigate_ca_cert.pem'
+    dest: '{{ frigate_base_dir }}/certs/frigate_ca_cert.pem'
+    mode: '660'
+
+- name: Create private key for frigate webserver
+  community.crypto.openssl_privatekey:
+    path: '{{ frigate_secrets_dir }}/.frigate_privatekey.pem'
+    mode: '644'
+
+- name: Create certificate signing request (CSR) for frigate certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: '{{ frigate_secrets_dir }}/.frigate_privatekey.pem'
+    organization_name: "{{ frigate_fqdn }}"
+    common_name: "{{ frigate_fqdn }}"
+    state_or_province_name: "Private"
+    country_name: "US"
+    subject_alt_name:
+      - "DNS:{{ frigate_fqdn }}"
+      - "DNS:localhost"
+  register: csr
+
+- name: Sign frigate certificate
+  community.crypto.x509_certificate:
+    csr_content: "{{ csr.csr }}"
+    provider: ownca
+    ownca_path: /etc/ssl/certs/frigate_ca_cert.pem
+    ownca_privatekey_path: /etc/ssl/private/frigate_ca_privatekey.pem
+    ownca_not_after: +3650d  # valid for ten years
+    ownca_not_before: "-1d"  # valid since yesterday (in case of NTP issues)
+    path: '{{ frigate_base_dir }}/certs/frigate_cert.pem'
+
+- name: Pull oauth2-proxy image
+  community.docker.docker_image:
+    name: '{{ oauth2proxy_container_image }}:{{ oauth2proxy_container_ver }}'
+    source: pull
+
+- name: Copy over frigate logo
+  ansible.builtin.copy:
+    src: 'frigate.png'
+    dest: '{{ frigate_base_dir }}'
+    mode: '0644'
+
+- name: Copy over authorized emails file
+  ansible.builtin.template:
+    src: '.auth-emails.txt.j2'
+    dest: '{{ frigate_secrets_dir }}/.auth-emails.txt'
+    mode: '0644'
+
+# If 'cookie' is defined, just use it. If not, generate a new one for us
+- name: Generate cookie secret
+  ansible.builtin.set_fact:
+    cookie_secret: >
+      "{{ cookie_secret | default(lookup('password', '/dev/null length=32 chars=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_='), true) }}"
+
+- name: Check if docker-compose.yml exists
+  ansible.builtin.stat:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+  register: docker_compose_file
+
+- name: Apply blockinfile to create docker-compose.yml if it does not exist
+  ansible.builtin.blockinfile:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+    block: |
+      version: '3'
+
+      services:
+    mode: '0644'
+    create: true
+  when: not docker_compose_file.stat.exists
+
+- name: Render the Docker Compose excerpt template
+  ansible.builtin.template:
+    src: 'docker-compose-excerpt.yml.j2'
+    dest: '/tmp/docker-compose-excerpt.yml'
+    mode: '0644'
+
+- name: Slurp the docker-compose excerpt from the target
+  ansible.builtin.slurp:
+    src: '/tmp/docker-compose-excerpt.yml'
+  register: docker_compose_excerpt_slurped
+
+- name: Read existing docker-compose.yml
+  ansible.builtin.slurp:
+    src: "{{ frigate_base_dir }}/docker-compose.yml"
+  register: existing_docker_compose
+  ignore_errors: true
+
+- name: Delete existing docker-compose.yml
+  ansible.builtin.file:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+    state: absent
+
+- name: Combine existing file with new content
+  ansible.builtin.copy:
+    dest: "{{ frigate_base_dir }}/docker-compose.yml"
+    content: "{{ (existing_docker_compose['content'] | b64decode) + (docker_compose_excerpt_slurped['content'] | b64decode) }}"
+    backup: true
+    mode: '0644'
+  when: existing_docker_compose is defined and not existing_docker_compose is failed
+
+- name: Remove temp docker-compose.yml file
+  ansible.builtin.file:
+    path: '/tmp/docker-compose-excerpt.yml'
+    state: 'absent'

@@ -1,0 +1,121 @@
+---
+- name: Build frigate-nvr server
+  hosts: frigate
+  gather_facts: true
+  become: true
+  vars_files:
+    - server_config.yml
+  tasks:
+    - name: Update the cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Update all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: true
+        autoclean: true
+
+    - name: Install set of packages for all systems
+      ansible.builtin.package:
+        name:
+          - firewalld
+          - git
+          - vim
+          - wget
+          - curl
+          - htop
+          - lm-sensors
+        state: present
+
+    - name: Firewalld - Assign Zones to interfaces
+      ansible.posix.firewalld:
+        interface: "{{ item.interface }}"
+        zone: "{{ item.zone }}"
+        permanent: true
+        state: "enabled"
+      loop:
+        - interface: "{{ access_interface }}"
+          zone: "public"
+        - "{{ {'interface': camera_network_interface, 'zone': 'dmz'} if camera_network_interface is defined else {} }}"
+      when: item.interface is defined
+
+    - name: Firewalld - Allow Frigate Connections
+      ansible.posix.firewalld:
+        zone: 'public'
+        port: '{{ item.port }}/{{ item.proto }}'
+        permanent: true
+        state: enabled
+      loop:
+        - { port: '5000', proto: 'tcp'}
+        - { port: '8554', proto: 'tcp'}
+        - { port: '8555', proto: 'tcp'}
+        - { port: '8555', proto: 'udp'}
+      when: not oauth2_enable
+
+    - name: Firewalld - Allow HTTPS Frigate Connections
+      ansible.posix.firewalld:
+        zone: 'public'
+        service: 'https'
+        permanent: true
+        state: enabled
+      when: oauth2_enable
+
+    - name: Firewalld - Deny SSH on the camera network
+      ansible.posix.firewalld:
+        zone: 'dmz'
+        service: 'ssh'
+        permanent: true
+        state: disabled
+
+    - name: Reload the Firewalld Service
+      ansible.builtin.service:
+        name: firewalld
+        state: reloaded
+
+- name: Install Nvidia GPU and/or Coral-AI Drivers
+  hosts: frigate
+  gather_facts: true
+  become: true
+  vars_files:
+    - server_config.yml
+  roles:
+    - role: nvidia-gpu
+      when: nvidia_gpu_present
+    - role: coral-ai-drivers
+      when: coral_pci_present
+  post_tasks:
+    - name: Reboot Server
+      ansible.builtin.reboot:
+        msg: "Rebooting after APEX driver installation"
+      when: nvidia_gpu_present or coral_pci_present
+
+- name: Install Docker and configure nvidia-container-toolkit
+  hosts: frigate
+  gather_facts: true
+  become: true
+  vars_files:
+    - server_config.yml
+  roles:
+    - geerlingguy.docker
+  post_tasks:
+    - name: Run nvidia-ctk for docker
+      ansible.builtin.shell:
+        cmd: 'sudo nvidia-ctk runtime configure --runtime=docker'
+      when: nvidia_gpu_present
+
+- name: Install and start the Frigate Container and optional oauth2-proxy container
+  hosts: frigate
+  gather_facts: true
+  become: true
+  vars_files:
+    - server_config.yml
+  roles:
+    - role: frigate-container
+    - role: oauth2-proxy
+      when: oauth2_enable
+  post_tasks:
+    - name: Start All Containers
+      ansible.builtin.shell:
+        cmd: 'cd {{ frigate_base_dir }} && docker compose up --detach'

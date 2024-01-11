@@ -1,0 +1,24 @@
+---
+- name: Test to se what the major vars are set to
+  hosts: frigate
+  gather_facts: true
+  become: true
+  vars_files:
+    - server_config.yml
+  tasks:
+    - name: Output values of variables
+      ansible.builtin.debug:
+        msg: "The value of {{ item }} is: {{ lookup('vars', item) }}"
+      loop:
+        - ansible_host
+        - ansible_user
+        - nvidia_gpu_present
+        - coral_pci_present
+        - oauth2_enable
+        - access_interface
+        - camera_network_interface
+        - frigate_fqdn
+        - camera_rtsp_user
+        - camera_rtsp_password
+        - oauth2_proxy_client_id
+        - oauth2_proxy_secret

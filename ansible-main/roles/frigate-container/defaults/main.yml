@@ -1,0 +1,22 @@
+---
+camera1_ip: '192.168.10.6'
+camera1_rtsp_user: 'admin'
+camera1_rtsp_password: 'ChangeMeNow!'
+
+# Frigate Container location
+frigate_container_image: 'ghcr.io/blakeblackshear/frigate'
+
+# Recommend either '0.12.1' or '0.13.0-rc1'
+frigate_build_num: '0.12.1'
+
+# Location on the host for storing media
+frigate_base_dir: '/opt/frigate'
+frigate_media_dir: '{{ frigate_base_dir }}/media'
+frigate_config_dir: '{{ frigate_base_dir }}/config'
+
+frigate_secrets_dir: '/root/.frigate'
+frigate_env_file_location: '{{ frigate_secrets_dir }}/.frigate_env'
+
+frigate_user: 'frigate'
+
+oauth2_enable: false

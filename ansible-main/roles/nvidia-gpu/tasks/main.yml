@@ -1,0 +1,46 @@
+---
+- name: Include the Nvidia driver role
+  ansible.builtin.include_role:
+    name: nvidia.nvidia_driver
+
+- name: Clone keylase patch repo
+  ansible.builtin.git:
+    repo: https://github.com/keylase/nvidia-patch.git
+    dest: ~/nvidia-patch
+    single_branch: true
+    version: master
+  when: patch_driver_nvenc
+
+- name: Patch Nvidia Driver for unlimited codec streams
+  ansible.builtin.shell:
+    cmd: ~/nvidia-patch/patch.sh
+  when: patch_driver_nvenc
+
+- name: Remove Patch Repo
+  ansible.builtin.file:
+    path: ~/nvidia-patch
+    state: absent
+  when: patch_driver_nvenc
+
+- name: Add CUDA toolkit and GDS from the Nvidia repo
+  ansible.builtin.package:
+    name: '{{ additional_nvidia_packages }}'
+  when: install_cuda_packages
+
+- name: Add /usr/local/cuda/bin to PATH in all profiles
+  ansible.builtin.lineinfile:
+    path: '/etc/profile'
+    line: 'export PATH=$PATH:/usr/local/cuda/bin'
+    create: false
+    insertafter: 'EOF'
+    state: 'present'
+  when: install_cuda_packages
+
+- name: Add /usr/local/cuda/lib64 to LD_LIBRARY_PATH in all profiles
+  ansible.builtin.lineinfile:
+    path: '/etc/profile'
+    line: "export LD_LIBRARY_PATH='$LD_LIBRARY_PATH':/usr/local/cuda/lib64"
+    create: false
+    insertafter: 'EOF'
+    state: 'present'
+  when: install_cuda_packages

@@ -1,0 +1,118 @@
+##########################
+## You should be able to control all of the underlying settings from here. Each section of this file has different nobs to turn.
+## Don't try to change variables in the roles directly or end up in precedence hell.
+##
+## For info on precedence: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable
+##########################
+
+# ============================= #
+# System Installation Variables
+# ============================= #
+# NOTE: These may be used across multiple roles. For example in frigate-container to
+# determine how to setup the config.yml file and docker.
+
+# Currently only support Nvidia GPUs. Set this to 'true' if you'd like to use a Nvidia GPU for encoding/decoding
+nvidia_gpu_present: false
+
+# Set to 'true' if using a Coral.AI PCI device. Haven't tested USB device.
+coral_pci_present: false
+
+# Turns on OAuth2 Proxy for "Sign-in with Gmail" ability. Requires additional configuration with Google (no costs though)
+# Configure additional settings in "OAuth2-Proxy Container Variables" below.
+oauth2_enable: false
+
+frigate_fqdn: 'server.example.com'
+frigate_user: '{{ ansible_user }}'
+
+access_interface: 'eno1'
+
+# If you have an isolated camera network (because security), use this variable or override in the inventory file
+# camera_network_interface: 'eno2'
+
+# The UN/PW of the RTSP are located in a hidden file that is only accessible by root (because security)
+frigate_secrets_dir: '/root/.frigate'
+
+# ============================= #
+# Frigate Container Variables
+# ============================= #
+docker_users:
+  - '{{ frigate_user }}'
+
+# IP, UN, and PW for initial camera
+camera1_ip: '192.168.10.6'
+camera_rtsp_user: 'admin'
+camera_rtsp_password: 'ChangeMeNow!'
+
+# Frigate Container location
+frigate_container_image: 'ghcr.io/blakeblackshear/frigate'
+
+# As of 1/6/2024, Recommend either '0.12.1' (stable) or '0.13.0-rc1' (v13 release candidate)
+frigate_build_num: '0.13.0-rc1'
+
+# Location on the host for storing media
+frigate_base_dir: '/opt/frigate'
+frigate_media_dir: '{{ frigate_base_dir }}/media'
+frigate_config_dir: '{{ frigate_base_dir }}/config'
+
+frigate_env_file_location: '{{ frigate_secrets_dir }}/.frigate_env'
+
+# ============================= #
+# OAuth2-Proxy Container Variables
+# ============================= #
+#
+# If oauth2_enable=true, it uses OAuth2-Proxy for both the Authentication and HTTPS (TLS) termination. OAuth2-Proxy can use a bunch of different
+# providers. By default, we setup Google (e.g. Gmail). You can see more here: https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider
+# At this time, the ansible doesn't support anything but Google. If you implement another, please consider contibuting it back.
+
+# These will be email addresses that are authorized by the oauth2 proxy.
+# You should override this in the host or group variables.
+# These can be updated on the fly on the host at {{ frigate_secrets_dir }}/.auth-emails.txt
+authorized_emails:
+#  - user1@gmail.com
+#  - user2@gmail.com
+
+# Follow the instructions to create a new OAuth2 ClientID and Project (Free for gmail users)
+oauth2_proxy_client_id: '<INSERT GOOGLE API CLIENT ID>'
+oauth2_proxy_secret: 'INSERT GOOGLE API CLIENT SECRET'
+oauth2_proxy_redirect_url: 'http://{{ frigate_fqdn }}/oauth2/callback'
+
+oauth2proxy_container_image: 'quay.io/oauth2-proxy/oauth2-proxy'
+oauth2proxy_container_ver: 'latest'
+
+# OPTIONAL: You can define a cookie secret here. If it's left blank, the system will generate a new one everytime the role is run.
+# See https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#generating-a-cookie-secret for ways to generate.
+cookie_secret: ''
+
+# ============================= #
+# Nvidia GPU Variables
+# ============================= #
+
+# See "https://github.com/NVIDIA/ansible-role-nvidia-driver" for more variables and information
+# NOTE: Nvidia Driver version (defaults to -server).
+nvidia_driver_branch: "535"
+nvidia_driver_ubuntu_install_from_cuda_repo: true
+nvidia_driver_ubuntu_cuda_keyring_package: "cuda-keyring_1.1-1_all.deb"
+nvidia_driver_skip_reboot: true
+
+# Patches the driver for unlimited codec streams (see https://github.com/keylase/nvidia-patch for more information).
+patch_driver_nvenc: true
+
+# Whether to install the additional CUDA packages (CUDA, cuDNN, GDS, and Container-toolkit are defaults)
+# You can modify the packages that are installed below. If you are just using the CODEC of the GPU, CUDA is probably uncesessary.
+# Note, these are installed from Nvidia Repo, not the distro's repo
+install_cuda_packages: true
+
+# comment any of them out that you don't want/need
+additional_nvidia_packages:
+  - cuda-toolkit
+  - libcudnn8
+  - nvidia-gds
+  - nvidia-container-toolkit
+
+
+# ============================= #
+# Coral-AI Variables
+# ============================= #
+
+# What user does will be using
+coral_ai_drivers_user: '{{ frigate_user }}'

@@ -1,0 +1,4 @@
+---
+# Username of the frigate system user
+# (May be unnecessary due to the way docker runs containers)
+coral_ai_drivers_user: 'frigate'

@@ -1,0 +1,28 @@
+  oauth2-proxy:
+    container_name: oauth2-proxy
+    ports:
+      - "443:443"
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    command:
+      - --https-address
+      - 0.0.0.0:443
+    volumes:
+      - {{ frigate_secrets_dir }}/.auth-emails.txt:/auth-emails.txt
+      - {{ frigate_base_dir }}/frigate.png:/frigate.png
+      - {{ frigate_base_dir }}/certs/frigate_ca_cert.pem:/etc/ssl/certs/frigate_ca_cert.pem
+      - {{ frigate_base_dir }}/certs/frigate_cert.pem:/etc/ssl/certs/frigate_cert.pem
+      - {{ frigate_secrets_dir }}/.frigate_privatekey.pem:/etc/ssl/private/.frigate_privatekey.pem
+    environment:
+      OAUTH2_PROXY_UPSTREAMS: "http://frigate:5000/"
+      OAUTH2_PROXY_CLIENT_ID: '{{ oauth2_proxy_client_id }}'
+      OAUTH2_PROXY_CLIENT_SECRET: '{{ oauth2_proxy_secret }}'
+      OAUTH2_PROXY_COOKIE_SECRET: {{ cookie_secret }}
+      OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: "/auth-emails.txt"
+      OAUTH2_PROXY_PROVIDER: "google"
+      OAUTH2_PROXY_REDIRECT_URL: '{{ oauth2_proxy_redirect_url }}'
+      OAUTH2_PROXY_TLS_CERT_FILE: "/etc/ssl/certs/frigate_cert.pem"
+      OAUTH2_PROXY_TLS_KEY_FILE: "/etc/ssl/private/.frigate_privatekey.pem"
+      OAUTH2_PROXY_TLS_MIN_VERSION: "TLS1.3"
+      OAUTH2_PROXY_TLS_CIPHER_SUITE: "TLS_AES_256_GCM_SHA384"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: '/frigate.png'
+    restart: always

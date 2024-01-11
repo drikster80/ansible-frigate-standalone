@@ -1,0 +1,36 @@
+---
+- name: Add the Google Cloud packages GPG key
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add the Coral Edge TPU repository
+  ansible.builtin.apt_repository:
+    repo: 'deb https://packages.cloud.google.com/apt coral-edgetpu-stable main'
+    state: present
+    update_cache: true
+
+- name: Add Driver packages
+  ansible.builtin.package:
+    name:
+      - gasket-dkms
+      - libedgetpu1-std
+    state: present
+
+- name: Add udev rule for Apex
+  ansible.builtin.lineinfile:
+    path: /etc/udev/rules.d/65-apex.rules
+    line: 'SUBSYSTEM=="apex", MODE="0660", GROUP="apex"'
+    mode: '664'
+    create: true
+
+- name: Create apex group
+  ansible.builtin.group:
+    name: apex
+    state: present
+
+- name: Add specified user to apex group
+  ansible.builtin.user:
+    name: '{{ coral_ai_drivers_user }}'
+    groups: apex
+    append: true

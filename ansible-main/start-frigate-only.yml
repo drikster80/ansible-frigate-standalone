@@ -1,0 +1,8 @@
+- name: Start the Docker Compose Containers
+  hosts: frigate
+  gather_facts: true
+  become: true
+  post_tasks:
+    - name: Start All Containers
+      ansible.builtin.shell:
+        cmd: 'cd {{ frigate_base_dir }} && docker compose up --detach'

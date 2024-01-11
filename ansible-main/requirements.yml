@@ -1,0 +1,9 @@
+---
+roles:
+  - name: nvidia.nvidia_driver
+  - name: geerlingguy.docker
+
+collections:
+  - name: community.docker
+  - name: ansible.posix
+  - name: community.crypto

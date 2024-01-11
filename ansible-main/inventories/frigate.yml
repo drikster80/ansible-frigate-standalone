@@ -1,0 +1,7 @@
+# My production system has a Nvidia T400-4GB GPU and Coral-AI M.2 PCI device
+---
+frigate:
+  hosts:
+    frigate:
+      ansible_host: '<INSERT IP OF TARGET>'
+      ansible_user: 'frigate'

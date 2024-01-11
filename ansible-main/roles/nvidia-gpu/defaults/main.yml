@@ -1,0 +1,21 @@
+---
+# Nvidia Driver version (defaults to -server)
+nvidia_driver_branch: "535"
+nvidia_driver_ubuntu_install_from_cuda_repo: true
+nvidia_driver_ubuntu_cuda_keyring_package: "cuda-keyring_1.1-1_all.deb"
+nvidia_driver_skip_reboot: true
+
+# Patches the driver for unlimited codec streams (see https://github.com/keylase/nvidia-patch for more information).
+patch_driver_nvenc: true
+
+# Whether to install the additional CUDA packages (CUDA, cuDNN, GDS, and Container-toolkit are defaults)
+# You can modify the packages that are installed below
+# Note, these are installed from Nvidia Repo, not the distro's repo
+install_cuda_packages: true
+
+# comment any of them out that you don't want/need
+additional_nvidia_packages:
+  - cuda-toolkit
+  - libcudnn8
+  - nvidia-gds
+  - nvidia-container-toolkit

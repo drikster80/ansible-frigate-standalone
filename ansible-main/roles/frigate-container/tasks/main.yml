@@ -1,0 +1,86 @@
+---
+- name: Create directories for frigate server
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0775'
+  with_items:
+    - '{{ frigate_media_dir }}'
+    - '{{ frigate_config_dir }}'
+    - '{{ frigate_secrets_dir }}'
+
+- name: Pull Frigate Docker Image
+  community.docker.docker_image:
+    name: '{{ frigate_container_image }}:{{ frigate_build_num }}'
+    source: pull
+    pull:
+      platform: amd64
+
+- name: Install frigate environment variables template
+  ansible.builtin.template:
+    src: .frigate_env.j2
+    dest: "{{ frigate_env_file_location }}"
+    mode: '0660'
+
+- name: Copy over new /etc/issue file
+  ansible.builtin.template:
+    src: 'issue.j2'
+    dest: '/etc/issue'
+    mode: '0644'
+
+- name: Copy frigate config file
+  ansible.builtin.template:
+    src: 'config.yml.j2'
+    dest: '{{ frigate_config_dir }}/config.yml'
+    mode: '0644'
+
+- name: Check if docker-compose.yml exists
+  ansible.builtin.stat:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+  register: docker_compose_file
+
+- name: Apply blockinfile to create docker-compose.yml if it does not exist
+  ansible.builtin.blockinfile:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+    block: |
+      version: '3'
+
+      services:
+    mode: '0644'
+    create: true
+  when: not docker_compose_file.stat.exists
+
+- name: Render the Docker Compose excerpt template
+  ansible.builtin.template:
+    src: 'docker-compose-excerpt.yml.j2'
+    dest: '/tmp/docker-compose-excerpt.yml'
+    mode: '0644'
+
+- name: Slurp the docker-compose excerpt from the target
+  ansible.builtin.slurp:
+    src: '/tmp/docker-compose-excerpt.yml'
+  register: docker_compose_excerpt_slurped
+
+- name: Read existing docker-compose.yml
+  ansible.builtin.slurp:
+    src: "{{ frigate_base_dir }}/docker-compose.yml"
+  register: existing_docker_compose
+  ignore_errors: true
+
+- name: Delete existing docker-compose.yml
+  ansible.builtin.file:
+    path: '{{ frigate_base_dir }}/docker-compose.yml'
+    state: absent
+
+- name: Combine existing file with new content
+  ansible.builtin.copy:
+    dest: "{{ frigate_base_dir }}/docker-compose.yml"
+    content: "{{ (existing_docker_compose['content'] | b64decode) + (docker_compose_excerpt_slurped['content'] | b64decode) }}"
+    backup: true
+    mode: '0644'
+  when: existing_docker_compose is defined and not existing_docker_compose is failed
+
+- name: Remove temp docker-compose.yml file
+  ansible.builtin.file:
+    path: '/tmp/docker-compose-excerpt.yml'
+    state: 'absent'

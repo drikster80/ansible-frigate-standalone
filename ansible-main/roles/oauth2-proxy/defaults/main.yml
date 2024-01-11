@@ -1,0 +1,24 @@
+---
+# This is the fully qualified domain name (FQDN) of the frigate server/URL.
+# Note: Google's Credential system requires a valid FQDN. However, this doesn't have to be registered with
+# any public authority if you are simply overriding your local DNS or modifying your /etc/hosts file.
+frigate_fqdn: 'server.example.com'
+# These will be email addresses that are authorized by the oauth2 proxy.
+# You should override this in the host or group variables.
+# These can be updated on the fly on the host at {{ frigate_secrets_dir }}/.auth-emails.txt
+authorized_emails:
+# - user1@gmail.com
+# - user2@gmail.com
+
+frigate_base_dir: '/opt/frigate'
+frigate_secrets_dir: '/root/.frigate'
+
+oauth2proxy_container_image: 'quay.io/oauth2-proxy/oauth2-proxy'
+oauth2proxy_container_ver: 'latest'
+
+oauth2_proxy_client_id: ''
+oauth2_proxy_secret: ''
+cookie_secret: ''
+oauth2_proxy_redirect_url: ''
+
+frigate_user: 'frigate'

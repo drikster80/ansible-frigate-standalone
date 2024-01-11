@@ -1,0 +1,31 @@
+  frigate:
+    container_name: frigate
+    privileged: true
+    shm_size: '512MB'
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - {{ frigate_config_dir }}:/config:rw
+      - {{ frigate_media_dir }}:/media/frigate:rw
+    restart: always
+{% if coral_pci_present %}
+    devices:
+      - /dev/apex_0:/dev/apex_0
+{% endif %}
+{% if not oauth2_enable %}
+    ports:
+      - 5000:5000
+      - 8554:8554
+      - 8555:8555/tcp
+      - 8555:8555/udp
+{% endif %}
+    env_file:
+      - {{ frigate_env_file_location }}
+    image: {{ frigate_container_image }}:{{ frigate_build_num }}
+{% if nvidia_gpu_present %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+{% endif %}

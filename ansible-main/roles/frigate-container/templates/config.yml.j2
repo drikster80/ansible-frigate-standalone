@@ -1,0 +1,28 @@
+mqtt:
+  enabled: false
+{% if coral_pci_present %}
+detectors:
+  coral:
+    type: edgetpu
+    device: pci
+{% endif %}
+ffmpeg:
+  output_args:
+    record: preset-record-generic-audio-copy
+{% if nvidia_gpu_present %}
+  hwaccel_args: preset-nvidia-h265
+{% endif %}
+cameras:
+  camera1:
+    ffmpeg:
+      inputs:
+        - path: rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@{{ camera1_ip }}:554
+          roles:
+            - detect
+    detect:
+      enabled: True
+      height: 1520
+      width: 2688
+      fps: 15
+    record:
+      enabled: True
