@@ -6,6 +6,10 @@
       - /etc/localtime:/etc/localtime:ro
       - {{ frigate_config_dir }}:/config:rw
       - {{ frigate_media_dir }}:/media/frigate:rw
+      - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
+        target: /tmp/cache
+        tmpfs:
+          size: {{ temp_memory_cache }}
     restart: always
 {% if coral_pci_present %}
     devices:

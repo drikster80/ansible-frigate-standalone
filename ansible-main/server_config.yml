@@ -32,6 +32,7 @@ access_interface: 'eno1'
 # The UN/PW of the RTSP are located in a hidden file that is only accessible by root (because security)
 frigate_secrets_dir: '/root/.frigate'
 
+temp_memory_cache: '1073741824'
 # ============================= #
 # Frigate Container Variables
 # ============================= #
@@ -106,8 +107,6 @@ install_cuda_packages: true
 additional_nvidia_packages:
   - cuda-toolkit
   - libcudnn8S
-
-
 
 # ============================= #
 # Coral-AI Variables

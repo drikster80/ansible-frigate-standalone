@@ -20,3 +20,6 @@ frigate_env_file_location: '{{ frigate_secrets_dir }}/.frigate_env'
 frigate_user: 'frigate'
 
 oauth2_enable: false
+
+# Set the amount of temporary memory cache to use to prevent wear on SSD card.
+temp_memory_cache: '1073741824'
