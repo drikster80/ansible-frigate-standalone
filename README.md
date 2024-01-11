@@ -16,11 +16,11 @@ Includes roles and variables to support optional configurations:
 
 ToDo List:
 - Create variable for camera video encoding (currently defaulted to H.265)
-- Separate the Nvidia container-toolkit from CUDA package list.
+- ~~Separate the Nvidia container-toolkit from CUDA package list.~~ DONE!
 - Allow use of own certificates for HTTPS
-- Refactor ansible variable precedence to be clear how to override variables
+- ~~Refactor ansible variable precedence to be clear how to override variables~~ DONE!
 - Test on Ubuntu Desktop and a few different versions
-- Ensure all scripts are idempotent and can be run multiple times
+- Ensure all scripts are idempotent and can be run multiple times (currently not idempotent due to docker-compose-excerpt.yml.j2 process)
 
 ## Quickstart Installation
 
