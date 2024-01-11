@@ -22,7 +22,7 @@
     state: absent
   when: patch_driver_nvenc
 
-- name: Add CUDA toolkit and GDS from the Nvidia repo
+- name: Add CUDA toolkit and optional GDS from the Nvidia repo
   ansible.builtin.package:
     name: '{{ additional_nvidia_packages }}'
   when: install_cuda_packages
@@ -44,3 +44,8 @@
     insertafter: 'EOF'
     state: 'present'
   when: install_cuda_packages
+
+- name: Install Nvidia Container Toolkit
+  ansible.builtin.package:
+    name: 'nvidia-container-toolkit'
+    state: present
