@@ -30,7 +30,7 @@ There is an example [config.yml template](ansible_main/roles/frigate-container/t
 
 ### Clone the repo and install requirements
 ```bash
-git clone https://github.com/drikster80/ansible-frigate-server.git
+git clone https://github.com/drikster80/ansible-frigate-standalone.git
 
 cd ansible-main
 ansible-galaxy install -r requirements.yml
