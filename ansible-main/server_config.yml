@@ -68,13 +68,13 @@ frigate_env_file_location: '{{ frigate_secrets_dir }}/.frigate_env'
 # You should override this in the host or group variables.
 # These can be updated on the fly on the host at {{ frigate_secrets_dir }}/.auth-emails.txt
 authorized_emails:
-#  - user1@gmail.com
+  - user1@gmail.com
 #  - user2@gmail.com
 
 # Follow the instructions to create a new OAuth2 ClientID and Project (Free for gmail users)
 oauth2_proxy_client_id: '<INSERT GOOGLE API CLIENT ID>'
 oauth2_proxy_secret: 'INSERT GOOGLE API CLIENT SECRET'
-oauth2_proxy_redirect_url: 'http://{{ frigate_fqdn }}/oauth2/callback'
+oauth2_proxy_redirect_url: 'https://{{ frigate_fqdn }}/oauth2/callback'
 
 oauth2proxy_container_image: 'quay.io/oauth2-proxy/oauth2-proxy'
 oauth2proxy_container_ver: 'latest'
@@ -105,9 +105,8 @@ install_cuda_packages: true
 # comment any of them out that you don't want/need
 additional_nvidia_packages:
   - cuda-toolkit
-  - libcudnn8
-  - nvidia-gds
-  - nvidia-container-toolkit
+  - libcudnn8S
+
 
 
 # ============================= #
