@@ -1,6 +1,6 @@
 ---
 # Nvidia Driver version (defaults to -server)
-nvidia_driver_branch: "535"
+nvidia_driver_branch: "550"
 nvidia_driver_ubuntu_install_from_cuda_repo: true
 nvidia_driver_ubuntu_cuda_keyring_package: "cuda-keyring_1.1-1_all.deb"
 nvidia_driver_skip_reboot: true
