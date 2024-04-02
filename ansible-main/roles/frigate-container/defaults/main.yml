@@ -7,7 +7,7 @@ camera1_rtsp_password: 'ChangeMeNow!'
 frigate_container_image: 'ghcr.io/blakeblackshear/frigate'
 
 # Recommend either '0.12.1' or '0.13.0-rc1'
-frigate_build_num: '0.12.1'
+frigate_build_num: '0.13.2'
 
 # Location on the host for storing media
 frigate_base_dir: '/opt/frigate'

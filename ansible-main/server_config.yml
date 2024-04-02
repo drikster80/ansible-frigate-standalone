@@ -47,8 +47,8 @@ camera_rtsp_password: 'ChangeMeNow!'
 # Frigate Container location
 frigate_container_image: 'ghcr.io/blakeblackshear/frigate'
 
-# As of 1/6/2024, Recommend either '0.12.1' (stable) or '0.13.0-rc1' (v13 release candidate)
-frigate_build_num: '0.13.0-rc1'
+# Frigate version number
+frigate_build_num: '0.13.2'
 
 # Location on the host for storing media
 frigate_base_dir: '/opt/frigate'
@@ -90,7 +90,7 @@ cookie_secret: ''
 
 # See "https://github.com/NVIDIA/ansible-role-nvidia-driver" for more variables and information
 # NOTE: Nvidia Driver version (defaults to -server).
-nvidia_driver_branch: "535"
+nvidia_driver_branch: "550"
 nvidia_driver_ubuntu_install_from_cuda_repo: true
 nvidia_driver_ubuntu_cuda_keyring_package: "cuda-keyring_1.1-1_all.deb"
 nvidia_driver_skip_reboot: true
